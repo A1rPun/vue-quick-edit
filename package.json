@@ -1,0 +1,53 @@
+{
+  "name": "vue-quick-edit",
+  "version": "1.0.0",
+  "description": "In-place editing with native HTML inputs",
+  "main": "dist/vue-quick-edit.umd.js",
+  "module": "dist/vue-quick-edit.esm.js",
+  "unpkg": "dist/vue-quick-edit.min.js",
+  "browser": {
+    "./sfc": "src/quick-edit.vue"
+  },
+  "scripts": {
+    "build": "NODE_ENV=production && npm run build:all & npm run docs",
+    "build:all": "npm run build:umd & npm run build:es & npm run build:unpkg",
+    "build:es": "rollup --config build/rollup.config.js --format es --file dist/vue-quick-edit.esm.js",
+    "build:umd": "rollup --config build/rollup.config.js --format umd --file dist/vue-quick-edit.umd.js",
+    "build:unpkg": "rollup --config build/rollup.config.js --format iife --file dist/vue-quick-edit.min.js",
+    "docs": "vue-cli-service build documentation/main.js ",
+    "lint": "vue-cli-service lint",
+    "serve": "vue-cli-service serve",
+    "test": "npm run test:unit",
+    "test:unit": "vue-cli-service test:unit"
+  },
+  "files": [
+    "src/*.vue",
+    "dist/*.js"
+  ],
+  "devDependencies": {
+    "@vue/cli-plugin-babel": "^3.9.0",
+    "@vue/cli-plugin-eslint": "^3.9.0",
+    "@vue/cli-plugin-unit-jest": "^3.9.0",
+    "@vue/cli-service": "^3.9.0",
+    "@vue/eslint-config-prettier": "^4.0.1",
+    "@vue/test-utils": "1.0.0-beta.29",
+    "babel-core": "7.0.0-bridge.0",
+    "babel-eslint": "^10.0.1",
+    "babel-jest": "^23.6.0",
+    "core-js": "^2.6.5",
+    "eslint": "^5.16.0",
+    "eslint-plugin-vue": "^5.0.0",
+    "node-sass": "^4.9.0",
+    "rollup": "^1.17.0",
+    "rollup-plugin-buble": "^0.19.2",
+    "rollup-plugin-commonjs": "^10.0.1",
+    "rollup-plugin-node-builtins": "^2.1.2",
+    "rollup-plugin-node-globals": "^1.4.0",
+    "rollup-plugin-vue": "^5.0.1",
+    "sass-loader": "^7.1.0",
+    "vue": "^2.6.10",
+    "vue-template-compiler": "^2.6.10"
+  },
+  "author": "A1rPun",
+  "license": "ISC"
+}
