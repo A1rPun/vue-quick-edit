@@ -165,6 +165,18 @@ var mune = function (keys) { return keys.reduce(function (acc, cur) {
     acc[cur] = cur;
     return acc;
   }, {}); };
+var states = mune(['display', 'edit']);
+var events = mune(['input', 'rawInput', 'show', 'close', 'invalid', 'focusin']);
+var types = mune([
+  'boolean',
+  'checkbox',
+  'input',
+  'password',
+  'radio',
+  'select',
+  'textarea',
+  'url' ]);
+var modes = mune(['ok', 'cancel', 'ignore']);
 
 var script = {
   name: 'QuickEdit',
@@ -181,9 +193,17 @@ var script = {
       type: String,
       default: 'Empty',
     },
+    booleanYesText: {
+      type: String,
+      default: 'Yes',
+    },
+    booleanNoText: {
+      type: String,
+      default: 'No',
+    },
     type: {
       type: String,
-      default: 'input',
+      default: types.input,
     },
     options: {
       type: Array,
@@ -193,10 +213,13 @@ var script = {
     },
     mode: {
       type: String,
-      default: 'ok',
+      default: modes.ok,
+      validator: function(value) {
+        return !!modes[value];
+      },
     },
     value: {
-      type: [String, Number, Array],
+      type: [String, Array, Boolean, Number],
       default: '',
     },
     placeholderValue: {
@@ -206,39 +229,68 @@ var script = {
     classes: {
       type: Object,
       default: function default$2() {
-        return {
-          buttonCancel: 'vue-quick-edit__button--cancel',
-          buttonOk: 'vue-quick-edit__button--ok',
-          buttons: 'vue-quick-edit__buttons',
-          input: 'vue-quick-edit__input',
-          link: 'vue-quick-edit__link',
-          wrapper: '',
-        };
+        return;
       },
+    },
+    validator: {
+      type: Function,
+      default: null,
+    },
+    showButtons: {
+      type: Boolean,
+      default: true,
+    },
+    startOpen: {
+      type: Boolean,
+      default: false,
     },
   },
   computed: {
+    isEmpty: function isEmpty() {
+      return '' === this.prettyValue;
+    },
+    isEditing: function isEditing() {
+      return states.edit === this.inputState;
+    },
     isEnabled: function isEnabled() {
-      return typeof this.$attrs.disabled === 'undefined' || !this.$attrs.disabled;
+      return !this.$attrs.disabled && this.$attrs.disabled !== '';
     },
     isRequired: function isRequired() {
-      return typeof this.$attrs.required !== 'undefined' || this.$attrs.required;
+      return this.$attrs.required || '' === this.$attrs.required;
+    },
+    isMultiple: function isMultiple() {
+      return (
+        this.displayOptions.length &&
+        (this.types.select === this.type ||
+          this.types.checkbox === this.type ||
+          this.types.radio === this.type)
+      );
     },
     prettyValue: function prettyValue() {
-      return Array.isArray(this.theValue) ? this.theValue.join(', ') : this.theValue;
+      return this.isMultiple
+        ? Array.isArray(this.theValue)
+          ? this.theValue.map(this.getDisplayOption).join(', ')
+          : this.getDisplayOption(this.theValue)
+        : this.theValue;
     },
     displayOptions: function displayOptions() {
       var ref = this.options;
       var firstEl = ref[0];
       return firstEl && typeof firstEl === 'string'
-        ? this.options.map(function (x) { return ({
-            value: x,
-            text: x,
-          }); })
+        ? this.options.map(function (x) { return ({ value: x, text: x }); })
         : this.options;
     },
     displayValue: function displayValue() {
-      return this.prettyValue || this.emptyText;
+      if (this.types.boolean === this.type)
+        { return this.theValue ? this.booleanYesText : this.booleanNoText; }
+      else if (this.types.password === this.type) { return '•'.repeat(8); }
+      return this.isEmpty ? this.emptyText : this.prettyValue;
+    },
+    classNames: function classNames() {
+      return Object.assign({}, this.defaultClasses, this.classes);
+    },
+    tabIndex: function tabIndex() {
+      return this.$attrs.tabindex || 0;
     },
   },
   watch: {
@@ -247,61 +299,90 @@ var script = {
     },
   },
   data: function data() {
-    var states = mune(['static', 'edit']);
-
     return {
-      inputState: states.static,
+      inputState: this.startOpen ? states.edit : states.display,
       theValue: '',
       inputValue: '',
-      types: mune(['input', 'select', 'textarea', 'radio', 'checkbox']),
-      states: states,
+      types: types,
+      defaultClasses: {
+        buttonCancel: 'vue-quick-edit__button vue-quick-edit__button--cancel',
+        buttonOk: 'vue-quick-edit__button vue-quick-edit__button--ok',
+        buttons: 'vue-quick-edit__buttons',
+        input: 'vue-quick-edit__input',
+        link: 'vue-quick-edit__link',
+        wrapper: 'vue-quick-edit',
+      },
     };
   },
   methods: {
-    show: function show() {
-      var this$1 = this;
+    handleClick: function handleClick() {
+      if (!this.isEnabled) { return; }
 
+      if (this.types.boolean === this.type) {
+        this.theValue = !this.theValue;
+        this.$emit(events.input, this.theValue);
+      } else {
+        this.show();
+      }
+    },
+    handleFocus: function handleFocus(ref) {
+      var type = ref.type;
+
+      if (events.focusin === type) {
+        clearTimeout(this._handleFocus);
+      } else {
+        this._handleFocus = setTimeout$1(this.clickOutside, 0);
+      }
+    },
+    show: function show() {
       this.inputValue = this.theValue;
-      this.inputState = this.states.edit;
-      setTimeout$1(function () {
-        var el = this$1.$refs.el.querySelector('input,select,textarea');
-        el && el.focus();
-      }, 0);
-      this.$emit('show', this.theValue);
+      this.inputState = states.edit;
+      this.$emit(events.show, this.theValue);
+      this.focus();
     },
     close: function close() {
-      this.inputState = this.states.static;
-      this.$emit('close', this.theValue);
+      this.inputState = states.display;
+      this.$emit(events.close, this.theValue);
     },
     ok: function ok() {
-      this.$emit('beforeinput', this.inputValue);
-      this.theValue = this.inputValue;
-      this.$emit('input', this.theValue);
-      this.close();
+      if (this.validator) {
+        var error = this.validator(this.inputValue);
+        if (error) { this.$emit(events.invalid, this.theValue, error); }
+      } else {
+        this.theValue = this.inputValue;
+        this.$emit(events.input, this.theValue);
+        this.$emit(events.rawInput, this.inputValue);
+        this.close();
+      }
+    },
+    focus: function focus() {
+      var this$1 = this;
+
+      var className =
+        states.display === this.inputState
+          ? ("." + (this.classNames.link))
+          : ("." + (this.classNames.input));
+      setTimeout$1(function () {
+        var el = this$1.$refs.el && this$1.$refs.el.querySelector(className);
+        el && el.focus();
+      }, 0);
     },
     setValue: function setValue(value) {
       this.theValue = value;
       this.inputValue = value;
     },
-    clickInside: function clickInside() {
-      var this$1 = this;
-
-      this.inside = true;
-      setTimeout$1(function () { return (this$1.inside = false); }, 0);
-    },
     clickOutside: function clickOutside() {
-      if (this.inside) { return; }
-      if (this.mode === 'ok') { this.ok(); }
-      else if (this.mode === 'cancel') { this.close(); }
+      if (this.inputState !== states.edit) { return; }
+      if (modes.ok === this.mode) { this.ok(); }
+      else if (modes.cancel === this.mode) { this.close(); }
+    },
+    getDisplayOption: function getDisplayOption(opt) {
+      var option = this.displayOptions.find(function (x) { return x.value === opt; });
+      return option ? option.text : '';
     },
   },
   created: function created() {
     this.setValue(this.value);
-    this.__handlerRef__ = this.clickOutside.bind(this);
-    document.body.addEventListener('click', this.__handlerRef__);
-  },
-  destroyed: function destroyed() {
-    document.body.removeEventListener('click', this.__handlerRef__);
   },
 };
 
@@ -456,11 +537,11 @@ var __vue_render__ = function() {
   var _c = _vm._self._c || _h;
   return _c(
     "div",
-    { ref: "el", class: _vm.classes.wrapper, on: { click: _vm.clickInside } },
+    { ref: "el", class: _vm.classNames.wrapper },
     [
-      _vm.inputState === _vm.states.edit && _vm.isEnabled
+      _vm.isEditing && _vm.isEnabled
         ? [
-            _vm.type === _vm.types.select
+            _vm.types.select === _vm.type
               ? _c(
                   "select",
                   _vm._b(
@@ -473,9 +554,51 @@ var __vue_render__ = function() {
                           expression: "inputValue"
                         }
                       ],
-                      class: _vm.classes.input,
-                      attrs: { tabindex: _vm.$attrs.tabindex || 0 },
+                      class: _vm.classNames.input,
+                      attrs: { tabindex: _vm.tabIndex },
                       on: {
+                        focusin: _vm.handleFocus,
+                        focusout: _vm.handleFocus,
+                        keyup: [
+                          function($event) {
+                            if (
+                              !$event.type.indexOf("key") &&
+                              _vm._k(
+                                $event.keyCode,
+                                "enter",
+                                13,
+                                $event.key,
+                                "Enter"
+                              )
+                            ) {
+                              return null
+                            }
+                            return _vm.ok($event)
+                          },
+                          function($event) {
+                            if (
+                              !$event.type.indexOf("key") &&
+                              _vm._k(
+                                $event.keyCode,
+                                "escape",
+                                undefined,
+                                $event.key,
+                                undefined
+                              )
+                            ) {
+                              return null
+                            }
+                            if (
+                              $event.ctrlKey ||
+                              $event.shiftKey ||
+                              $event.altKey ||
+                              $event.metaKey
+                            ) {
+                              return null
+                            }
+                            return _vm.close($event)
+                          }
+                        ],
                         change: function($event) {
                           var $$selectedVal = Array.prototype.filter
                             .call($event.target.options, function(o) {
@@ -525,7 +648,7 @@ var __vue_render__ = function() {
                   ],
                   2
                 )
-              : _vm.type === _vm.types.textarea
+              : _vm.types.textarea === _vm.type
               ? _c(
                   "textarea",
                   _vm._b(
@@ -538,10 +661,55 @@ var __vue_render__ = function() {
                           expression: "inputValue"
                         }
                       ],
-                      class: _vm.classes.input,
-                      attrs: { tabindex: _vm.$attrs.tabindex || 0 },
+                      class: _vm.classNames.input,
+                      attrs: { tabindex: _vm.tabIndex },
                       domProps: { value: _vm.inputValue },
                       on: {
+                        focusin: _vm.handleFocus,
+                        focusout: _vm.handleFocus,
+                        keyup: [
+                          function($event) {
+                            if (
+                              !$event.type.indexOf("key") &&
+                              _vm._k(
+                                $event.keyCode,
+                                "enter",
+                                13,
+                                $event.key,
+                                "Enter"
+                              )
+                            ) {
+                              return null
+                            }
+                            if (!$event.ctrlKey) {
+                              return null
+                            }
+                            return _vm.ok($event)
+                          },
+                          function($event) {
+                            if (
+                              !$event.type.indexOf("key") &&
+                              _vm._k(
+                                $event.keyCode,
+                                "escape",
+                                undefined,
+                                $event.key,
+                                undefined
+                              )
+                            ) {
+                              return null
+                            }
+                            if (
+                              $event.ctrlKey ||
+                              $event.shiftKey ||
+                              $event.altKey ||
+                              $event.metaKey
+                            ) {
+                              return null
+                            }
+                            return _vm.close($event)
+                          }
+                        ],
                         input: function($event) {
                           if ($event.target.composing) {
                             return
@@ -555,7 +723,7 @@ var __vue_render__ = function() {
                     false
                   )
                 )
-              : _vm.type === _vm.types.radio || _vm.type === _vm.types.checkbox
+              : _vm.types.radio === _vm.type || _vm.types.checkbox === _vm.type
               ? _vm._l(_vm.displayOptions, function(option) {
                   return [
                     _c("label", { key: option.value }, [
@@ -574,7 +742,7 @@ var __vue_render__ = function() {
                                   }
                                 ],
                                 attrs: {
-                                  tabindex: _vm.$attrs.tabindex || 0,
+                                  tabindex: _vm.tabIndex,
                                   type: "checkbox"
                                 },
                                 domProps: {
@@ -584,6 +752,48 @@ var __vue_render__ = function() {
                                     : _vm.inputValue
                                 },
                                 on: {
+                                  focusin: _vm.handleFocus,
+                                  focusout: _vm.handleFocus,
+                                  keyup: [
+                                    function($event) {
+                                      if (
+                                        !$event.type.indexOf("key") &&
+                                        _vm._k(
+                                          $event.keyCode,
+                                          "enter",
+                                          13,
+                                          $event.key,
+                                          "Enter"
+                                        )
+                                      ) {
+                                        return null
+                                      }
+                                      return _vm.ok($event)
+                                    },
+                                    function($event) {
+                                      if (
+                                        !$event.type.indexOf("key") &&
+                                        _vm._k(
+                                          $event.keyCode,
+                                          "escape",
+                                          undefined,
+                                          $event.key,
+                                          undefined
+                                        )
+                                      ) {
+                                        return null
+                                      }
+                                      if (
+                                        $event.ctrlKey ||
+                                        $event.shiftKey ||
+                                        $event.altKey ||
+                                        $event.metaKey
+                                      ) {
+                                        return null
+                                      }
+                                      return _vm.close($event)
+                                    }
+                                  ],
                                   change: function($event) {
                                     var $$a = _vm.inputValue,
                                       $$el = $event.target,
@@ -625,7 +835,7 @@ var __vue_render__ = function() {
                                   }
                                 ],
                                 attrs: {
-                                  tabindex: _vm.$attrs.tabindex || 0,
+                                  tabindex: _vm.tabIndex,
                                   type: "radio"
                                 },
                                 domProps: {
@@ -633,6 +843,48 @@ var __vue_render__ = function() {
                                   checked: _vm._q(_vm.inputValue, option.value)
                                 },
                                 on: {
+                                  focusin: _vm.handleFocus,
+                                  focusout: _vm.handleFocus,
+                                  keyup: [
+                                    function($event) {
+                                      if (
+                                        !$event.type.indexOf("key") &&
+                                        _vm._k(
+                                          $event.keyCode,
+                                          "enter",
+                                          13,
+                                          $event.key,
+                                          "Enter"
+                                        )
+                                      ) {
+                                        return null
+                                      }
+                                      return _vm.ok($event)
+                                    },
+                                    function($event) {
+                                      if (
+                                        !$event.type.indexOf("key") &&
+                                        _vm._k(
+                                          $event.keyCode,
+                                          "escape",
+                                          undefined,
+                                          $event.key,
+                                          undefined
+                                        )
+                                      ) {
+                                        return null
+                                      }
+                                      if (
+                                        $event.ctrlKey ||
+                                        $event.shiftKey ||
+                                        $event.altKey ||
+                                        $event.metaKey
+                                      ) {
+                                        return null
+                                      }
+                                      return _vm.close($event)
+                                    }
+                                  ],
                                   change: function($event) {
                                     _vm.inputValue = option.value;
                                   }
@@ -656,7 +908,7 @@ var __vue_render__ = function() {
                                   }
                                 ],
                                 attrs: {
-                                  tabindex: _vm.$attrs.tabindex || 0,
+                                  tabindex: _vm.tabIndex,
                                   type: _vm.type
                                 },
                                 domProps: {
@@ -664,6 +916,48 @@ var __vue_render__ = function() {
                                   value: _vm.inputValue
                                 },
                                 on: {
+                                  focusin: _vm.handleFocus,
+                                  focusout: _vm.handleFocus,
+                                  keyup: [
+                                    function($event) {
+                                      if (
+                                        !$event.type.indexOf("key") &&
+                                        _vm._k(
+                                          $event.keyCode,
+                                          "enter",
+                                          13,
+                                          $event.key,
+                                          "Enter"
+                                        )
+                                      ) {
+                                        return null
+                                      }
+                                      return _vm.ok($event)
+                                    },
+                                    function($event) {
+                                      if (
+                                        !$event.type.indexOf("key") &&
+                                        _vm._k(
+                                          $event.keyCode,
+                                          "escape",
+                                          undefined,
+                                          $event.key,
+                                          undefined
+                                        )
+                                      ) {
+                                        return null
+                                      }
+                                      if (
+                                        $event.ctrlKey ||
+                                        $event.shiftKey ||
+                                        $event.altKey ||
+                                        $event.metaKey
+                                      ) {
+                                        return null
+                                      }
+                                      return _vm.close($event)
+                                    }
+                                  ],
                                   input: function($event) {
                                     if ($event.target.composing) {
                                       return
@@ -693,17 +987,56 @@ var __vue_render__ = function() {
                           expression: "inputValue"
                         }
                       ],
-                      class: _vm.classes.input,
-                      attrs: {
-                        tabindex: _vm.$attrs.tabindex || 0,
-                        type: "checkbox"
-                      },
+                      class: _vm.classNames.input,
+                      attrs: { tabindex: _vm.tabIndex, type: "checkbox" },
                       domProps: {
                         checked: Array.isArray(_vm.inputValue)
                           ? _vm._i(_vm.inputValue, null) > -1
                           : _vm.inputValue
                       },
                       on: {
+                        focusin: _vm.handleFocus,
+                        focusout: _vm.handleFocus,
+                        keyup: [
+                          function($event) {
+                            if (
+                              !$event.type.indexOf("key") &&
+                              _vm._k(
+                                $event.keyCode,
+                                "enter",
+                                13,
+                                $event.key,
+                                "Enter"
+                              )
+                            ) {
+                              return null
+                            }
+                            return _vm.ok($event)
+                          },
+                          function($event) {
+                            if (
+                              !$event.type.indexOf("key") &&
+                              _vm._k(
+                                $event.keyCode,
+                                "escape",
+                                undefined,
+                                $event.key,
+                                undefined
+                              )
+                            ) {
+                              return null
+                            }
+                            if (
+                              $event.ctrlKey ||
+                              $event.shiftKey ||
+                              $event.altKey ||
+                              $event.metaKey
+                            ) {
+                              return null
+                            }
+                            return _vm.close($event)
+                          }
+                        ],
                         change: function($event) {
                           var $$a = _vm.inputValue,
                             $$el = $event.target,
@@ -743,13 +1076,52 @@ var __vue_render__ = function() {
                           expression: "inputValue"
                         }
                       ],
-                      class: _vm.classes.input,
-                      attrs: {
-                        tabindex: _vm.$attrs.tabindex || 0,
-                        type: "radio"
-                      },
+                      class: _vm.classNames.input,
+                      attrs: { tabindex: _vm.tabIndex, type: "radio" },
                       domProps: { checked: _vm._q(_vm.inputValue, null) },
                       on: {
+                        focusin: _vm.handleFocus,
+                        focusout: _vm.handleFocus,
+                        keyup: [
+                          function($event) {
+                            if (
+                              !$event.type.indexOf("key") &&
+                              _vm._k(
+                                $event.keyCode,
+                                "enter",
+                                13,
+                                $event.key,
+                                "Enter"
+                              )
+                            ) {
+                              return null
+                            }
+                            return _vm.ok($event)
+                          },
+                          function($event) {
+                            if (
+                              !$event.type.indexOf("key") &&
+                              _vm._k(
+                                $event.keyCode,
+                                "escape",
+                                undefined,
+                                $event.key,
+                                undefined
+                              )
+                            ) {
+                              return null
+                            }
+                            if (
+                              $event.ctrlKey ||
+                              $event.shiftKey ||
+                              $event.altKey ||
+                              $event.metaKey
+                            ) {
+                              return null
+                            }
+                            return _vm.close($event)
+                          }
+                        ],
                         change: function($event) {
                           _vm.inputValue = null;
                         }
@@ -772,13 +1144,52 @@ var __vue_render__ = function() {
                           expression: "inputValue"
                         }
                       ],
-                      class: _vm.classes.input,
-                      attrs: {
-                        tabindex: _vm.$attrs.tabindex || 0,
-                        type: _vm.type
-                      },
+                      class: _vm.classNames.input,
+                      attrs: { tabindex: _vm.tabIndex, type: _vm.type },
                       domProps: { value: _vm.inputValue },
                       on: {
+                        focusin: _vm.handleFocus,
+                        focusout: _vm.handleFocus,
+                        keyup: [
+                          function($event) {
+                            if (
+                              !$event.type.indexOf("key") &&
+                              _vm._k(
+                                $event.keyCode,
+                                "enter",
+                                13,
+                                $event.key,
+                                "Enter"
+                              )
+                            ) {
+                              return null
+                            }
+                            return _vm.ok($event)
+                          },
+                          function($event) {
+                            if (
+                              !$event.type.indexOf("key") &&
+                              _vm._k(
+                                $event.keyCode,
+                                "escape",
+                                undefined,
+                                $event.key,
+                                undefined
+                              )
+                            ) {
+                              return null
+                            }
+                            if (
+                              $event.ctrlKey ||
+                              $event.shiftKey ||
+                              $event.altKey ||
+                              $event.metaKey
+                            ) {
+                              return null
+                            }
+                            return _vm.close($event)
+                          }
+                        ],
                         input: function($event) {
                           if ($event.target.composing) {
                             return
@@ -793,36 +1204,43 @@ var __vue_render__ = function() {
                   )
                 ),
             _vm._v(" "),
-            _c("div", { class: _vm.classes.buttons }, [
-              _c(
-                "button",
-                {
-                  class: _vm.classes.buttonOk,
-                  attrs: {
-                    title: _vm.buttonOkText,
-                    disabled: _vm.isRequired && !_vm.inputValue
-                  },
-                  on: { click: _vm.ok }
-                },
-                [_vm._t("button-ok", [_vm._v(_vm._s(_vm.buttonOkText))])],
-                2
-              ),
-              _vm._v(" "),
-              _c(
-                "button",
-                {
-                  class: _vm.classes.buttonCancel,
-                  attrs: { title: _vm.buttonCancelText },
-                  on: { click: _vm.close }
-                },
-                [
-                  _vm._t("button-cancel", [
-                    _vm._v(_vm._s(_vm.buttonCancelText))
-                  ])
-                ],
-                2
-              )
-            ])
+            _vm.showButtons
+              ? _c("div", { class: _vm.classNames.buttons }, [
+                  _c(
+                    "button",
+                    {
+                      class: _vm.classNames.buttonOk,
+                      attrs: { title: _vm.buttonOkText },
+                      on: {
+                        click: _vm.ok,
+                        focusin: _vm.handleFocus,
+                        focusout: _vm.handleFocus
+                      }
+                    },
+                    [_vm._t("button-ok", [_vm._v(_vm._s(_vm.buttonOkText))])],
+                    2
+                  ),
+                  _vm._v(" "),
+                  _c(
+                    "button",
+                    {
+                      class: _vm.classNames.buttonCancel,
+                      attrs: { title: _vm.buttonCancelText },
+                      on: {
+                        click: _vm.close,
+                        focusin: _vm.handleFocus,
+                        focusout: _vm.handleFocus
+                      }
+                    },
+                    [
+                      _vm._t("button-cancel", [
+                        _vm._v(_vm._s(_vm.buttonCancelText))
+                      ])
+                    ],
+                    2
+                  )
+                ])
+              : _vm._e()
           ]
         : [
             _vm._t("prepend"),
@@ -831,16 +1249,33 @@ var __vue_render__ = function() {
               "span",
               {
                 class: ((_obj = {}),
-                (_obj[_vm.classes.link] = true),
+                (_obj[_vm.classNames.link] = true),
                 (_obj["vue-quick-edit__link--is-clickable"] = _vm.isEnabled),
-                (_obj["vue-quick-edit__link--is-empty"] = !_vm.prettyValue),
+                (_obj["vue-quick-edit__link--is-empty"] = _vm.isEmpty),
                 (_obj["vue-quick-edit__link--is-required"] =
-                  _vm.isRequired && !_vm.prettyValue),
+                  _vm.isRequired && _vm.isEmpty),
                 _obj),
-                attrs: { tabindex: _vm.$attrs.tabindex || 0 },
-                on: { click: _vm.show }
+                attrs: { tabindex: _vm.isEnabled ? _vm.tabIndex : false },
+                on: {
+                  click: _vm.handleClick,
+                  keyup: function($event) {
+                    if (
+                      !$event.type.indexOf("key") &&
+                      _vm._k($event.keyCode, "enter", 13, $event.key, "Enter")
+                    ) {
+                      return null
+                    }
+                    return _vm.handleClick($event)
+                  }
+                }
               },
-              [_vm._v(_vm._s(_vm.displayValue))]
+              [
+                _vm._t("default", [_vm._v(_vm._s(_vm.displayValue))], {
+                  value: _vm.displayValue,
+                  rawValue: _vm.theValue
+                })
+              ],
+              2
             ),
             _vm._v(" "),
             _vm._t("append")
@@ -855,7 +1290,7 @@ __vue_render__._withStripped = true;
   /* style */
   var __vue_inject_styles__ = function (inject) {
     if (!inject) { return }
-    inject("data-v-40c03c5e_0", { source: ".vue-quick-edit__link {\n  white-space: pre-wrap;\n  color: #0088cc;\n}\n.vue-quick-edit__link--is-clickable {\n  border-bottom: 1px dashed #0088cc;\n  cursor: pointer;\n}\n.vue-quick-edit__link--is-clickable:hover {\n  color: #2a6496;\n  border-color: #2a6496;\n}\n.vue-quick-edit__link--is-empty {\n  font-style: italic;\n}\n.vue-quick-edit__link--is-required {\n  color: #dc3545;\n}\n.vue-quick-edit__input {\n  background-color: #f9f9f9;\n  color: #333;\n  border: 1px solid #ccc;\n  height: 32px;\n  padding: 0;\n}\n.vue-quick-edit__buttons {\n  margin-top: 8px;\n}\n.vue-quick-edit__buttons button {\n  height: 34px;\n  border: 1px solid #ccc;\n}\n.vue-quick-edit__buttons button[disabled] {\n  color: #333;\n  background-color: #ccc;\n  border-color: #ddd;\n}\n.vue-quick-edit__button--ok {\n  color: #fff;\n  background-color: #3276b1;\n  border-color: #357ebd;\n}\n.vue-quick-edit__button--cancel {\n  color: #333;\n  margin-left: 8px;\n  background-color: #fff;\n}\n[multiple].vue-quick-edit__input,\ntextarea.vue-quick-edit__input {\n  height: unset;\n  min-height: 64px;\n  display: block;\n}\n.vue-quick-edit__input:not(textarea):not([multiple]) + .vue-quick-edit__buttons,\nlabel + .vue-quick-edit__buttons {\n  display: inline;\n  margin-left: 8px;\n}\n.form-group {\n  margin-bottom: 0;\n}\n.btn-group {\n  display: inline-block;\n}", map: undefined, media: undefined });
+    inject("data-v-19f1936f_0", { source: ".vue-quick-edit__link {\n  white-space: pre-wrap;\n  color: #0088cc;\n}\n.vue-quick-edit__link--is-clickable {\n  border-bottom: 1px dashed #0088cc;\n  cursor: pointer;\n  user-select: none;\n}\n.vue-quick-edit__link--is-clickable:hover {\n  color: #2a6496;\n  border-color: #2a6496;\n}\n.vue-quick-edit__link--is-empty {\n  font-style: italic;\n  color: gray;\n}\n.vue-quick-edit__link--is-required {\n  color: #dc3545;\n}\n.vue-quick-edit__input {\n  background-color: #f9f9f9;\n  color: #333;\n  border: 1px solid #ccc;\n  height: 32px;\n  padding: 0;\n}\n.vue-quick-edit__buttons {\n  margin-top: 8px;\n}\n.vue-quick-edit__button {\n  height: 34px;\n  min-width: 34px;\n  border: 1px solid #ccc;\n}\n.vue-quick-edit__button--ok {\n  color: #fff;\n  background-color: #3276b1;\n  border-color: #357ebd;\n}\n.vue-quick-edit__button--cancel {\n  color: #333;\n  margin-left: 8px;\n  background-color: #fff;\n}\n[multiple].vue-quick-edit__input,\ntextarea.vue-quick-edit__input {\n  height: unset;\n  min-height: 64px;\n  display: block;\n}\n.vue-quick-edit__input:not(textarea):not([multiple]) + .vue-quick-edit__buttons,\nlabel + .vue-quick-edit__buttons {\n  display: inline;\n  margin-left: 8px;\n}", map: undefined, media: undefined });
 
   };
   /* scoped */

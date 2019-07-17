@@ -1,6 +1,6 @@
 {
   "name": "vue-quick-edit",
-  "version": "1.0.0",
+  "version": "1.2.0",
   "description": "In-place editing with native HTML inputs",
   "main": "dist/vue-quick-edit.umd.js",
   "module": "dist/vue-quick-edit.esm.js",
@@ -47,6 +47,23 @@
     "sass-loader": "^7.1.0",
     "vue": "^2.6.10",
     "vue-template-compiler": "^2.6.10"
+  },
+  "keywords": [
+    "quick",
+    "edit",
+    "input",
+    "form",
+    "in-place",
+    "vue",
+    "editable"
+  ],
+  "homepage": "https://a1rpun.github.io/vue-quick-edit/",
+  "repository": {
+    "type": "git",
+    "url": "git@github.com:A1rPun/vue-quick-edit.git"
+  },
+  "bugs": {
+    "url": "https://github.com/A1rPun/vue-quick-edit/issues"
   },
   "author": "A1rPun",
   "license": "ISC"

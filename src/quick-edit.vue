@@ -1,12 +1,16 @@
 <template>
-  <div ref="el" :class="classes.wrapper" @click="clickInside">
-    <template v-if="inputState === states.edit && isEnabled">
+  <div ref="el" :class="classNames.wrapper">
+    <template v-if="isEditing && isEnabled">
       <select
-        v-if="type === types.select"
-        :class="classes.input"
+        v-if="types.select === type"
+        :class="classNames.input"
         v-model="inputValue"
         v-bind="$attrs"
-        :tabindex="$attrs.tabindex || 0"
+        :tabindex="tabIndex"
+        @focusin="handleFocus"
+        @focusout="handleFocus"
+        @keyup.enter="ok"
+        @keyup.escape.exact="close"
       >
         <option v-show="$attrs.placeholder" :value="placeholderValue">{{ $attrs.placeholder }}</option>
         <option
@@ -16,14 +20,18 @@
         >{{ option.text }}</option>
       </select>
       <textarea
-        v-else-if="type === types.textarea"
-        :class="classes.input"
+        v-else-if="types.textarea === type"
+        :class="classNames.input"
         v-model="inputValue"
         v-bind="$attrs"
-        :tabindex="$attrs.tabindex || 0"
+        :tabindex="tabIndex"
+        @focusin="handleFocus"
+        @focusout="handleFocus"
+        @keyup.ctrl.enter="ok"
+        @keyup.escape.exact="close"
       ></textarea>
       <template
-        v-else-if="type === types.radio || type === types.checkbox"
+        v-else-if="types.radio === type || types.checkbox === type"
         v-for="option in displayOptions"
       >
         <label :key="option.value">
@@ -33,28 +41,43 @@
             :value="option.value"
             v-model="inputValue"
             v-bind="$attrs"
-            :tabindex="$attrs.tabindex || 0"
+            :tabindex="tabIndex"
+            @focusin="handleFocus"
+            @focusout="handleFocus"
+            @keyup.enter="ok"
+            @keyup.escape.exact="close"
           >
         </label>
       </template>
       <input
         v-else
-        :class="classes.input"
+        :class="classNames.input"
         :type="type"
         v-model="inputValue"
         v-bind="$attrs"
-        :tabindex="$attrs.tabindex || 0"
+        :tabindex="tabIndex"
+        @focusin="handleFocus"
+        @focusout="handleFocus"
+        @keyup.enter="ok"
+        @keyup.escape.exact="close"
       >
-      <div :class="classes.buttons">
+      <div v-if="showButtons" :class="classNames.buttons">
         <button
-          :class="classes.buttonOk"
+          :class="classNames.buttonOk"
           :title="buttonOkText"
-          :disabled="isRequired && !inputValue"
           @click="ok"
+          @focusin="handleFocus"
+          @focusout="handleFocus"
         >
           <slot name="button-ok">{{ buttonOkText }}</slot>
         </button>
-        <button :class="classes.buttonCancel" @click="close" :title="buttonCancelText">
+        <button
+          :class="classNames.buttonCancel"
+          :title="buttonCancelText"
+          @click="close"
+          @focusin="handleFocus"
+          @focusout="handleFocus"
+        >
           <slot name="button-cancel">{{ buttonCancelText }}</slot>
         </button>
       </div>
@@ -63,27 +86,43 @@
       <slot name="prepend"></slot>
       <span
         :class="{
-          [classes.link]: true,
+          [classNames.link]: true,
           'vue-quick-edit__link--is-clickable': isEnabled,
-          'vue-quick-edit__link--is-empty': !prettyValue,
-          'vue-quick-edit__link--is-required': isRequired && !prettyValue,
+          'vue-quick-edit__link--is-empty': isEmpty,
+          'vue-quick-edit__link--is-required': isRequired && isEmpty,
         }"
-        :tabindex="$attrs.tabindex || 0"
-        @click="show"
-      >{{ displayValue }}</span>
+        :tabindex="isEnabled ? tabIndex : false"
+        @click="handleClick"
+        @keyup.enter="handleClick"
+      >
+        <slot :value="displayValue" :raw-value="theValue">{{ displayValue }}</slot>
+      </span>
       <slot name="append"></slot>
     </template>
   </div>
 </template>
 
 <script>
-import { setTimeout } from 'timers';
+import { setTimeout, clearTimeout } from 'timers';
 
 const mune = keys =>
   keys.reduce((acc, cur) => {
     acc[cur] = cur;
     return acc;
   }, {});
+const states = mune(['display', 'edit']);
+const events = mune(['input', 'rawInput', 'show', 'close', 'invalid', 'focusin']);
+const types = mune([
+  'boolean',
+  'checkbox',
+  'input',
+  'password',
+  'radio',
+  'select',
+  'textarea',
+  'url',
+]);
+const modes = mune(['ok', 'cancel', 'ignore']);
 
 export default {
   name: 'QuickEdit',
@@ -100,9 +139,17 @@ export default {
       type: String,
       default: 'Empty',
     },
+    booleanYesText: {
+      type: String,
+      default: 'Yes',
+    },
+    booleanNoText: {
+      type: String,
+      default: 'No',
+    },
     type: {
       type: String,
-      default: 'input',
+      default: types.input,
     },
     options: {
       type: Array,
@@ -112,10 +159,13 @@ export default {
     },
     mode: {
       type: String,
-      default: 'ok',
+      default: modes.ok,
+      validator: function(value) {
+        return !!modes[value];
+      },
     },
     value: {
-      type: [String, Number, Array],
+      type: [String, Array, Boolean, Number],
       default: '',
     },
     placeholderValue: {
@@ -125,38 +175,67 @@ export default {
     classes: {
       type: Object,
       default() {
-        return {
-          buttonCancel: 'vue-quick-edit__button--cancel',
-          buttonOk: 'vue-quick-edit__button--ok',
-          buttons: 'vue-quick-edit__buttons',
-          input: 'vue-quick-edit__input',
-          link: 'vue-quick-edit__link',
-          wrapper: '',
-        };
+        return;
       },
+    },
+    validator: {
+      type: Function,
+      default: null,
+    },
+    showButtons: {
+      type: Boolean,
+      default: true,
+    },
+    startOpen: {
+      type: Boolean,
+      default: false,
     },
   },
   computed: {
+    isEmpty() {
+      return '' === this.prettyValue;
+    },
+    isEditing() {
+      return states.edit === this.inputState;
+    },
     isEnabled() {
-      return typeof this.$attrs.disabled === 'undefined' || !this.$attrs.disabled;
+      return !this.$attrs.disabled && this.$attrs.disabled !== '';
     },
     isRequired() {
-      return typeof this.$attrs.required !== 'undefined' || this.$attrs.required;
+      return this.$attrs.required || '' === this.$attrs.required;
+    },
+    isMultiple() {
+      return (
+        this.displayOptions.length &&
+        (this.types.select === this.type ||
+          this.types.checkbox === this.type ||
+          this.types.radio === this.type)
+      );
     },
     prettyValue() {
-      return Array.isArray(this.theValue) ? this.theValue.join(', ') : this.theValue;
+      return this.isMultiple
+        ? Array.isArray(this.theValue)
+          ? this.theValue.map(this.getDisplayOption).join(', ')
+          : this.getDisplayOption(this.theValue)
+        : this.theValue;
     },
     displayOptions() {
       const [firstEl] = this.options;
       return firstEl && typeof firstEl === 'string'
-        ? this.options.map(x => ({
-            value: x,
-            text: x,
-          }))
+        ? this.options.map(x => ({ value: x, text: x }))
         : this.options;
     },
     displayValue() {
-      return this.prettyValue || this.emptyText;
+      if (this.types.boolean === this.type)
+        return this.theValue ? this.booleanYesText : this.booleanNoText;
+      else if (this.types.password === this.type) return '•'.repeat(8);
+      return this.isEmpty ? this.emptyText : this.prettyValue;
+    },
+    classNames() {
+      return Object.assign({}, this.defaultClasses, this.classes);
+    },
+    tabIndex() {
+      return this.$attrs.tabindex || 0;
     },
   },
   watch: {
@@ -165,57 +244,86 @@ export default {
     },
   },
   data() {
-    const states = mune(['static', 'edit']);
-
     return {
-      inputState: states.static,
+      inputState: this.startOpen ? states.edit : states.display,
       theValue: '',
       inputValue: '',
-      types: mune(['input', 'select', 'textarea', 'radio', 'checkbox']),
-      states,
+      types,
+      defaultClasses: {
+        buttonCancel: 'vue-quick-edit__button vue-quick-edit__button--cancel',
+        buttonOk: 'vue-quick-edit__button vue-quick-edit__button--ok',
+        buttons: 'vue-quick-edit__buttons',
+        input: 'vue-quick-edit__input',
+        link: 'vue-quick-edit__link',
+        wrapper: 'vue-quick-edit',
+      },
     };
   },
   methods: {
+    handleClick() {
+      if (!this.isEnabled) return;
+
+      if (this.types.boolean === this.type) {
+        this.theValue = !this.theValue;
+        this.$emit(events.input, this.theValue);
+      } else {
+        this.show();
+      }
+    },
+    handleFocus({ type }) {
+      if (events.focusin === type) {
+        clearTimeout(this._handleFocus);
+      } else {
+        this._handleFocus = setTimeout(this.clickOutside, 0);
+      }
+    },
     show() {
       this.inputValue = this.theValue;
-      this.inputState = this.states.edit;
-      setTimeout(() => {
-        const el = this.$refs.el.querySelector('input,select,textarea');
-        el && el.focus();
-      }, 0);
-      this.$emit('show', this.theValue);
+      this.inputState = states.edit;
+      this.$emit(events.show, this.theValue);
+      this.focus();
     },
     close() {
-      this.inputState = this.states.static;
-      this.$emit('close', this.theValue);
+      this.inputState = states.display;
+      this.$emit(events.close, this.theValue);
     },
     ok() {
-      this.$emit('beforeinput', this.inputValue);
-      this.theValue = this.inputValue;
-      this.$emit('input', this.theValue);
-      this.close();
+      if (this.validator) {
+        const error = this.validator(this.inputValue);
+        if (error) this.$emit(events.invalid, this.theValue, error);
+      } else {
+        this.theValue = this.inputValue;
+        this.$emit(events.input, this.theValue);
+        this.$emit(events.rawInput, this.inputValue);
+        this.close();
+      }
+    },
+    focus() {
+      const className =
+        states.display === this.inputState
+          ? `.${this.classNames.link}`
+          : `.${this.classNames.input}`;
+      setTimeout(() => {
+        const el = this.$refs.el && this.$refs.el.querySelector(className);
+        el && el.focus();
+      }, 0);
     },
     setValue(value) {
       this.theValue = value;
       this.inputValue = value;
     },
-    clickInside() {
-      this.inside = true;
-      setTimeout(() => (this.inside = false), 0);
-    },
     clickOutside() {
-      if (this.inside) return;
-      if (this.mode === 'ok') this.ok();
-      else if (this.mode === 'cancel') this.close();
+      if (this.inputState !== states.edit) return;
+      if (modes.ok === this.mode) this.ok();
+      else if (modes.cancel === this.mode) this.close();
+    },
+    getDisplayOption(opt) {
+      const option = this.displayOptions.find(x => x.value === opt);
+      return option ? option.text : '';
     },
   },
   created() {
     this.setValue(this.value);
-    this.__handlerRef__ = this.clickOutside.bind(this);
-    document.body.addEventListener('click', this.__handlerRef__);
-  },
-  destroyed() {
-    document.body.removeEventListener('click', this.__handlerRef__);
   },
 };
 </script>
@@ -223,12 +331,13 @@ export default {
 <style lang="scss">
 $link-color: #0088cc;
 $link-hover-color: #2a6496;
-$success-color: #3276b1;
-$success-text-color: #fff;
-$success-border-color: #357ebd;
+$primary-color: #3276b1;
+$primary-text-color: #fff;
+$primary-border-color: #357ebd;
 $danger-color: #dc3545;
 $default-color: #fff;
 $default-text-color: #333;
+$border-color: #ccc;
 $quick-edit-height: 32px;
 
 .vue-quick-edit {
@@ -243,10 +352,12 @@ $quick-edit-height: 32px;
         color: $link-hover-color;
         border-color: $link-hover-color;
       }
+      user-select: none;
     }
 
     &--is-empty {
       font-style: italic;
+      color: gray;
     }
 
     &--is-required {
@@ -257,31 +368,24 @@ $quick-edit-height: 32px;
   &__input {
     background-color: #f9f9f9;
     color: #333;
-    border: 1px solid #ccc;
+    border: 1px solid $border-color;
     height: $quick-edit-height;
     padding: 0;
   }
 
   &__buttons {
     margin-top: 8px;
-
-    button {
-      height: $quick-edit-height + 2px;
-      border: 1px solid #ccc;
-
-      &[disabled] {
-        color: $default-text-color;
-        background-color: #ccc;
-        border-color: #ddd;
-      }
-    }
   }
 
   &__button {
+    height: $quick-edit-height + 2px;
+    min-width: $quick-edit-height + 2px;
+    border: 1px solid $border-color;
+
     &--ok {
-      color: $success-text-color;
-      background-color: $success-color;
-      border-color: $success-border-color;
+      color: $primary-text-color;
+      background-color: $primary-color;
+      border-color: $primary-border-color;
     }
 
     &--cancel {
@@ -303,13 +407,5 @@ textarea.vue-quick-edit__input {
 label + .vue-quick-edit__buttons {
   display: inline;
   margin-left: 8px;
-}
-
-// Bootstrap theme override
-.form-group {
-  margin-bottom: 0;
-}
-.btn-group {
-  display: inline-block;
 }
 </style>
