@@ -290,13 +290,15 @@ export default {
     ok() {
       if (this.validator) {
         const error = this.validator(this.inputValue);
-        if (error) this.$emit(events.invalid, this.theValue, error);
-      } else {
-        this.theValue = this.inputValue;
-        this.$emit(events.input, this.theValue);
-        this.$emit(events.rawInput, this.inputValue);
-        this.close();
+        if (error) {
+          this.$emit(events.invalid, this.theValue, error);
+          return;
+        }
       }
+      this.theValue = this.inputValue;
+      this.$emit(events.input, this.theValue);
+      this.$emit(events.rawInput, this.inputValue);
+      this.close();
     },
     focus() {
       const className =
