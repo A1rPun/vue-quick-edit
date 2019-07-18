@@ -193,7 +193,7 @@ export default {
   },
   computed: {
     isEmpty() {
-      return '' === this.prettyValue;
+      return '' === this.prettyValue || null === this.prettyValue;
     },
     isEditing() {
       return states.edit === this.inputState;
