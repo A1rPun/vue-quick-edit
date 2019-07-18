@@ -1,8 +1,7 @@
 import vue from 'rollup-plugin-vue';
 import buble from 'rollup-plugin-buble';
 import commonjs from 'rollup-plugin-commonjs';
-import builtins from 'rollup-plugin-node-builtins';
-import globals from 'rollup-plugin-node-globals';
+import { terser } from "rollup-plugin-terser";
 
 export default {
   input: 'src/wrapper.js',
@@ -11,8 +10,6 @@ export default {
     exports: 'named',
   },
   plugins: [
-    globals(),
-    builtins(),
     commonjs(),
     vue({
       css: true,
@@ -20,5 +17,6 @@ export default {
       needMap: false,
     }),
     buble(),
+    terser(),
   ],
 };

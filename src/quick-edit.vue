@@ -103,8 +103,6 @@
 </template>
 
 <script>
-import { setTimeout, clearTimeout } from 'timers';
-
 const mune = keys =>
   keys.reduce((acc, cur) => {
     acc[cur] = cur;
