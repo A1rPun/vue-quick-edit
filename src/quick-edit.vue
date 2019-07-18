@@ -275,17 +275,18 @@ export default {
         this._handleFocus = setTimeout(this.clickOutside, 0);
       }
     },
-    show() {
+    show(doFocus = true) {
       this.inputValue = this.theValue;
       this.inputState = states.edit;
       this.$emit(events.show, this.theValue);
-      this.focus();
+      doFocus && this.focus();
     },
-    close() {
+    close(doFocus = true) {
       this.inputState = states.display;
       this.$emit(events.close, this.theValue);
+      doFocus && this.focus();
     },
-    ok() {
+    ok(doFocus = true) {
       if (this.validator) {
         const error = this.validator(this.inputValue);
         if (error) {
@@ -296,14 +297,11 @@ export default {
       this.theValue = this.inputValue;
       this.$emit(events.input, this.theValue);
       this.$emit(events.rawInput, this.inputValue);
-      this.close();
+      this.close(doFocus);
     },
     focus() {
-      const className =
-        states.display === this.inputState
-          ? `.${this.classNames.link}`
-          : `.${this.classNames.input}`;
       setTimeout(() => {
+        const className = this.isEditing ? 'input:first-child' : 'span';
         const el = this.$refs.el && this.$refs.el.querySelector(className);
         el && el.focus();
       }, 0);
@@ -314,8 +312,8 @@ export default {
     },
     clickOutside() {
       if (this.inputState !== states.edit) return;
-      if (modes.ok === this.mode) this.ok();
-      else if (modes.cancel === this.mode) this.close();
+      if (modes.ok === this.mode) this.ok(false);
+      else if (modes.cancel === this.mode) this.close(false);
     },
     getDisplayOption(opt) {
       const option = this.displayOptions.find(x => x.value === opt);
