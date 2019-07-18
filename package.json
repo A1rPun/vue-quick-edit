@@ -1,6 +1,6 @@
 {
   "name": "vue-quick-edit",
-  "version": "1.2.1",
+  "version": "1.2.2",
   "description": "In-place editing with native HTML inputs",
   "main": "dist/vue-quick-edit.umd.js",
   "module": "dist/vue-quick-edit.esm.js",
