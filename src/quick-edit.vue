@@ -301,7 +301,7 @@ export default {
     },
     focus() {
       setTimeout(() => {
-        const className = this.isEditing ? 'input:first-child' : 'span';
+        const className = this.isEditing ? 'input,select,textarea' : 'span';
         const el = this.$refs.el && this.$refs.el.querySelector(className);
         el && el.focus();
       }, 0);
