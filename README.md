@@ -2,6 +2,8 @@
 
 > In-place editing with native HTML inputs. Inspired by x-editable
 
+[![npm version](https://img.shields.io/npm/v/vue-quick-edit.svg)](https://www.npmjs.com/package/vue-quick-edit) [![npm size](https://img.shields.io/bundlephobia/min/vue-quick-edit.svg)](https://www.npmjs.com/package/vue-quick-edit) [![npm downloads](https://img.shields.io/npm/dt/vue-quick-edit.svg)](https://www.npmjs.com/package/vue-quick-edit) [![Coverage Status](https://img.shields.io/travis/A1rPun/vue-quick-edit.svg)](https://travis-ci.org/A1rPun/vue-quick-edit)
+
 ## [Example](https://a1rpun.github.io/vue-quick-edit/)
 
 ## Features
@@ -117,3 +119,10 @@ Use it like this
 ```html
 <quick-edit :classes="vueQuickEditClasses"><quick-edit>
 ```
+
+### Thanks to
+
+- Github for hosting
+- NPM for hosting
+- Travis CI for the service
+- [Shields.io](https://shields.io) for the badges
