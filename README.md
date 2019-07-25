@@ -126,3 +126,7 @@ Use it like this
 - NPM for hosting
 - Travis CI for the service
 - [Shields.io](https://shields.io) for the badges
+
+## Licence
+MIT, see LICENSE.
+
