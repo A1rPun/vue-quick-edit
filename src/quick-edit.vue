@@ -350,7 +350,6 @@ $quick-edit-height: 32px;
         color: $link-hover-color;
         border-color: $link-hover-color;
       }
-      user-select: none;
     }
 
     &--is-empty {
