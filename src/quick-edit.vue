@@ -17,6 +17,7 @@
           v-for="option in displayOptions"
           :key="option.value"
           :value="option.value"
+          :disabled="option.disabled"
         >{{ option.text }}</option>
       </select>
       <textarea
@@ -39,8 +40,8 @@
           <input
             :type="type"
             :value="option.value"
+            :disabled="option.disabled"
             v-model="inputValue"
-            v-bind="$attrs"
             :tabindex="tabIndex"
             @focusin="handleFocus"
             @focusout="handleFocus"

@@ -54,13 +54,13 @@ booleanNoText | String | No | The text for `false` when you configure `type="boo
 emptyText | String | Empty | The text to display when there is a falsy value in the `v-model` directive.
 classes | Object | See Description | buttonCancel: 'vue-quick-edit__button--cancel'<br>  buttonOk: 'vue-quick-edit__button--ok'<br>  buttons: 'vue-quick-edit__buttons'<br>  input: 'vue-quick-edit__input'<br>  link: 'vue-quick-edit__link'<br>  wrapper: 'vue-quick-edit'
 mode | String | ok | Specify what the input should do when the user clicks outside of the component. Possible options are `ok`,`cancel` or `ignore`.
-options | Array | [] | The options to display for a `select`, `checkbox` or `radio` type. This can be an array of strings or an array of objects with `text` & `value` as properties.
+options | Array | [] | The options to display for a `select`, `checkbox` or `radio` type. This can be an array of strings or an array of objects with `text` & `value` (& `disabled`) as properties.
 placeholderValue | String | `''` | When you pass a `placeholder` to a select it will display the placeholder as the first default option, you can set the value of this option with `placeholderValue`.
 showButtons | Boolean | true | Hide the buttons by setting this to `false`.
 startOpen | Boolean | false | Set to `true` if you want to start in edit mode.
 type | String | input | This can be `input`, `textarea`, `select`, `checkbox`, `radio`, `boolean` or any other type you can pass to `input`.
 validator | Function | null | Let's you specify a callback to describe why the input is invalid.
-v-model | String, Array, Boolean, Number | `''` | The value .
+v-model | String, Array, Boolean, Number | `''` | Usually a string, for `checkbox` or `select[multiple]` use an array.
 
 ## Events
 Name | Parameters | Description
