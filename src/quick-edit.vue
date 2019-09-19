@@ -35,7 +35,7 @@
         v-else-if="types.radio === type || types.checkbox === type"
         v-for="option in displayOptions"
       >
-        <label :key="option.value">
+        <label :key="option.value" @focusin="handleFocus" @focusout="handleFocus">
           {{ option.text }}
           <input
             :type="type"
@@ -43,8 +43,6 @@
             :disabled="option.disabled"
             v-model="inputValue"
             :tabindex="tabIndex"
-            @focusin="handleFocus"
-            @focusout="handleFocus"
             @keyup.enter="ok"
             @keyup.escape.exact="close"
           >
