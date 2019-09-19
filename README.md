@@ -52,7 +52,7 @@ buttonOkText | String | Ok | The text on the Ok button.
 booleanYesText | String | Yes | The text for `true` when you configure `type="boolean"`.
 booleanNoText | String | No | The text for `false` when you configure `type="boolean"`
 emptyText | String | Empty | The text to display when there is a falsy value in the `v-model` directive.
-classes | Object | See Description | buttonCancel: 'vue-quick-edit__button--cancel'<br>  buttonOk: 'vue-quick-edit__button--ok'<br>  buttons: 'vue-quick-edit__buttons'<br>  input: 'vue-quick-edit__input'<br>  link: 'vue-quick-edit__link'<br>  wrapper: 'vue-quick-edit'
+classes | Object | See Description | buttonCancel: 'vue-quick-edit__button--cancel'<br>buttonOk: 'vue-quick-edit__button--ok'<br>buttons: 'vue-quick-edit__buttons'<br>input: 'vue-quick-edit__input'<br>link: 'vue-quick-edit__link'<br>isClickable: 'vue-quick-edit__link--is-clickable'<br>isEmpty: 'vue-quick-edit__link--is-empty'<br>isRequired: 'vue-quick-edit__link--is-required'<br>wrapper: 'vue-quick-edit'
 mode | String | ok | Specify what the input should do when the user clicks outside of the component. Possible options are `ok`,`cancel` or `ignore`.
 options | Array | [] | The options to display for a `select`, `checkbox` or `radio` type. This can be an array of strings or an array of objects with `text` & `value` (& `disabled`) as properties.
 placeholderValue | String | `''` | When you pass a `placeholder` to a select it will display the placeholder as the first default option, you can set the value of this option with `placeholderValue`.
@@ -93,7 +93,7 @@ For example just override this class in your style
 
 ### Bootstrap theme
 
-Set up the classes for the corresponding elements
+Set up the classes for the corresponding elements in `data`
 ```js
 vueQuickEditClasses: {
   wrapper: 'form-group form-inline',
@@ -105,13 +105,15 @@ vueQuickEditClasses: {
 ```
 
 Maybe add specific overrides for bootstrap
-```css
+```html
+<style scoped>
 .form-group {
   margin-bottom: 0;
 }
 .btn-group {
   display: inline-block;
 }
+</style>
 ```
 
 Use it like this

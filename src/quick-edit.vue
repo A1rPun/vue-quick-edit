@@ -86,9 +86,9 @@
       <span
         :class="{
           [classNames.link]: true,
-          'vue-quick-edit__link--is-clickable': isEnabled,
-          'vue-quick-edit__link--is-empty': isEmpty,
-          'vue-quick-edit__link--is-required': isRequired && isEmpty,
+          [classNames.isClickable]: isEnabled,
+          [classNames.isEmpty]: isEmpty,
+          [classNames.isRequired]: isRequired && isEmpty,
         }"
         :tabindex="isEnabled ? tabIndex : false"
         @click="handleClick"
@@ -252,6 +252,9 @@ export default {
         buttons: 'vue-quick-edit__buttons',
         input: 'vue-quick-edit__input',
         link: 'vue-quick-edit__link',
+        isClickable: 'vue-quick-edit__link--is-clickable',
+        isEmpty: 'vue-quick-edit__link--is-empty',
+        isRequired: 'vue-quick-edit__link--is-required',
         wrapper: 'vue-quick-edit',
       },
     };
