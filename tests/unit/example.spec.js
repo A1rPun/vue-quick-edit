@@ -37,6 +37,29 @@ describe('quick-edit.vue', () => {
     expect(wrapper.text()).toMatch(expected);
   });
 
+  it('render the passed complex options', () => {
+    const options = [
+      {
+        text: 'Foo',
+        value: 1,
+      },
+      {
+        text: 'Bar',
+        value: 2,
+      },
+      {
+        text: 'Qux',
+        value: 3,
+      },
+    ];
+    const expected = 'Foo, Bar';
+    const value = [1, 2];
+    const wrapper = shallowMount(QuickEdit, {
+      propsData: { type: 'select', value, options },
+    });
+    expect(wrapper.text()).toMatch(expected);
+  });
+
   it('render type boolean', () => {
     const expected = 'No';
     const wrapper = shallowMount(QuickEdit, {
@@ -133,5 +156,18 @@ describe('quick-edit.vue', () => {
     wrapper.find('.vue-quick-edit__button--ok').trigger('click');
     expect(stub).not.toBeCalled();
     expect(wrapper.findAll('input')).toHaveLength(0);
+  });
+
+  it('format multiple values', () => {
+    const expected = 'A - B - C';
+    const wrapper = shallowMount(QuickEdit, {
+      propsData: {
+        type: 'select',
+        value: ['A', 'B', 'C'],
+        options: ['A', 'B', 'C', 'D'],
+        formatMultiple: values => values.join(' - '),
+      },
+    });
+    expect(wrapper.text()).toMatch(expected);
   });
 });
