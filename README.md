@@ -51,15 +51,16 @@ buttonCancelText | String | Cancel | The text on the Cancel button.
 buttonOkText | String | Ok | The text on the Ok button.
 booleanYesText | String | Yes | The text for `true` when you configure `type="boolean"`.
 booleanNoText | String | No | The text for `false` when you configure `type="boolean"`
-emptyText | String | Empty | The text to display when there is a falsy value in the `v-model` directive.
 classes | Object | See Description | buttonCancel: 'vue-quick-edit__button--cancel'<br>buttonOk: 'vue-quick-edit__button--ok'<br>buttons: 'vue-quick-edit__buttons'<br>input: 'vue-quick-edit__input'<br>link: 'vue-quick-edit__link'<br>isClickable: 'vue-quick-edit__link--is-clickable'<br>isEmpty: 'vue-quick-edit__link--is-empty'<br>isRequired: 'vue-quick-edit__link--is-required'<br>wrapper: 'vue-quick-edit'
+emptyText | String | Empty | The text to display when there is a falsy value in the `v-model` directive.
+formatMultiple | Function | `values.join(', ')` | Specify a callback to format the array for a `select`, `checkbox` or `radio` type.
 mode | String | ok | Specify what the input should do when the user clicks outside of the component. Possible options are `ok`,`cancel` or `ignore`.
 options | Array | [] | The options to display for a `select`, `checkbox` or `radio` type. This can be an array of strings or an array of objects with `text` & `value` (& `disabled`) as properties.
 placeholderValue | String | `''` | When you pass a `placeholder` to a select it will display the placeholder as the first default option, you can set the value of this option with `placeholderValue`.
 showButtons | Boolean | true | Hide the buttons by setting this to `false`.
 startOpen | Boolean | false | Set to `true` if you want to start in edit mode.
 type | String | input | This can be `input`, `textarea`, `select`, `checkbox`, `radio`, `boolean` or any other type you can pass to `input`.
-validator | Function | null | Let's you specify a callback to describe why the input is invalid.
+validator | Function | null | Specify a callback to describe why the input is invalid.
 v-model | String, Array, Boolean, Number | `''` | Usually a string, for `checkbox` or `select[multiple]` use an array.
 
 ## Events

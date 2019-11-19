@@ -150,10 +150,8 @@ export default {
     },
     options: {
       type: Array,
-      default() {
-        return [];
+      default: () => [],
       },
-    },
     mode: {
       type: String,
       default: modes.ok,
@@ -171,10 +169,8 @@ export default {
     },
     classes: {
       type: Object,
-      default() {
-        return;
+      default: () => null,
       },
-    },
     validator: {
       type: Function,
       default: null,
@@ -187,6 +183,10 @@ export default {
       type: Boolean,
       default: false,
     },
+    formatMultiple: {
+      type: Function,
+      default: values => values.join(', '),
+  },
   },
   computed: {
     isEmpty() {
@@ -212,7 +212,7 @@ export default {
     prettyValue() {
       return this.isMultiple
         ? Array.isArray(this.theValue)
-          ? this.theValue.map(this.getDisplayOption).join(', ')
+          ? this.formatMultiple(this.theValue.map(this.getDisplayOption))
           : this.getDisplayOption(this.theValue)
         : this.theValue;
     },
