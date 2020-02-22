@@ -64,7 +64,7 @@
         <button
           :class="classNames.buttonOk"
           :title="buttonOkText"
-          @click="ok"
+          @mousedown="ok"
           @focusin="handleFocus"
           @focusout="handleFocus"
         >
@@ -73,7 +73,7 @@
         <button
           :class="classNames.buttonCancel"
           :title="buttonCancelText"
-          @click="close"
+          @mousedown="close"
           @focusin="handleFocus"
           @focusout="handleFocus"
         >
