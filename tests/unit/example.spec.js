@@ -122,7 +122,7 @@ describe('quick-edit.vue', () => {
       propsData: { value, startOpen: true },
     });
     wrapper.vm.inputValue = expected; // TODO: Set value via DOM
-    wrapper.find('.vue-quick-edit__button--ok').trigger('click');
+    wrapper.find('.vue-quick-edit__button--ok').trigger('mousedown');
     expect(wrapper.text()).toMatch(expected);
   });
 
@@ -132,7 +132,7 @@ describe('quick-edit.vue', () => {
       propsData: { value: expected, startOpen: true },
     });
     wrapper.vm.inputValue = 'MyChangedValue'; // TODO: Set value via DOM
-    wrapper.find('.vue-quick-edit__button--cancel').trigger('click');
+    wrapper.find('.vue-quick-edit__button--cancel').trigger('mousedown');
     expect(wrapper.text()).toMatch(expected);
   });
 
@@ -142,7 +142,7 @@ describe('quick-edit.vue', () => {
     });
     const stub = jest.fn();
     wrapper.vm.$on('invalid', stub);
-    wrapper.find('.vue-quick-edit__button--ok').trigger('click');
+    wrapper.find('.vue-quick-edit__button--ok').trigger('mousedown');
     expect(stub).toBeCalled();
     expect(wrapper.findAll('input')).toHaveLength(1);
   });
@@ -153,7 +153,7 @@ describe('quick-edit.vue', () => {
     });
     const stub = jest.fn();
     wrapper.vm.$on('invalid', stub);
-    wrapper.find('.vue-quick-edit__button--ok').trigger('click');
+    wrapper.find('.vue-quick-edit__button--ok').trigger('mousedown');
     expect(stub).not.toBeCalled();
     expect(wrapper.findAll('input')).toHaveLength(0);
   });
