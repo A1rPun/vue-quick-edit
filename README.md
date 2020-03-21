@@ -40,7 +40,7 @@ export default {
 ## Usage
 
 ```html
-<quick-edit v-model="myValue"><quick-edit>
+<quick-edit v-model="myValue"></quick-edit>
 ```
 
 ## Properties
