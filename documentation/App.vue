@@ -101,12 +101,6 @@
       </div>
       <div>
         <label>
-          Click outside mode
-          <quick-edit v-model="mode" type="select" :options="modes"></quick-edit>
-        </label>
-      </div>
-      <div>
-        <label>
           Required
           <quick-edit v-model="required" type="boolean"></quick-edit>
         </label>

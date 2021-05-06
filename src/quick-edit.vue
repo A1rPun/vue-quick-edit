@@ -7,8 +7,6 @@
         v-model="inputValue"
         v-bind="$attrs"
         :tabindex="tabIndex"
-        @focusin="handleFocus"
-        @focusout="handleFocus"
         @keypress.enter="ok(true)"
         @keypress.escape.exact="close(true)"
       >
@@ -26,8 +24,6 @@
         v-model="inputValue"
         v-bind="$attrs"
         :tabindex="tabIndex"
-        @focusin="handleFocus"
-        @focusout="handleFocus"
         @keypress.ctrl.enter="ok(true)"
         @keypress.escape.exact="close(true)"
       ></textarea>
@@ -35,7 +31,7 @@
         v-else-if="types.radio === type || types.checkbox === type"
         v-for="option in displayOptions"
       >
-        <label :key="option.value" @focusin="handleFocus" @focusout="handleFocus">
+        <label :key="option.value">
           {{ option.text }}
           <input
             :type="type"
@@ -55,8 +51,6 @@
         v-model="inputValue"
         v-bind="$attrs"
         :tabindex="tabIndex"
-        @focusin="handleFocus"
-        @focusout="handleFocus"
         @keypress.enter="ok(true)"
         @keypress.escape.exact="close(true)"
       >
@@ -65,8 +59,6 @@
           :class="classNames.buttonOk"
           :title="buttonOkText"
           @click="ok(true)"
-          @focusin="handleFocus"
-          @focusout="handleFocus"
         >
           <slot name="button-ok">{{ buttonOkText }}</slot>
         </button>
@@ -74,8 +66,6 @@
           :class="classNames.buttonCancel"
           :title="buttonCancelText"
           @click="close(true)"
-          @focusin="handleFocus"
-          @focusout="handleFocus"
         >
           <slot name="button-cancel">{{ buttonCancelText }}</slot>
         </button>
@@ -108,7 +98,7 @@ const mune = keys =>
     return acc;
   }, {});
 const states = mune(['display', 'edit']);
-const events = mune(['input', 'rawInput', 'show', 'close', 'invalid', 'focusin']);
+const events = mune(['input', 'rawInput', 'show', 'close', 'invalid']);
 const types = mune([
   'boolean',
   'checkbox',
@@ -119,7 +109,6 @@ const types = mune([
   'textarea',
   'url',
 ]);
-const modes = mune(['ok', 'cancel', 'ignore']);
 
 export default {
   name: 'QuickEdit',
@@ -151,13 +140,6 @@ export default {
     options: {
       type: Array,
       default: () => [],
-      },
-    mode: {
-      type: String,
-      default: modes.ok,
-      validator: function(value) {
-        return !!modes[value];
-      },
     },
     value: {
       type: [String, Array, Boolean, Number],
@@ -270,13 +252,6 @@ export default {
         this.show();
       }
     },
-    handleFocus({ type }) {
-      if (events.focusin === type) {
-        clearTimeout(this._handleFocus);
-      } else {
-        this._handleFocus = setTimeout(this.clickOutside, 0);
-      }
-    },
     show(doFocus = true) {
       this.inputValue = this.theValue;
       this.inputState = states.edit;
@@ -311,11 +286,6 @@ export default {
     setValue(value) {
       this.theValue = value;
       this.inputValue = value;
-    },
-    clickOutside() {
-      if (this.inputState !== states.edit) return;
-      if (modes.ok === this.mode) this.ok(false);
-      else if (modes.cancel === this.mode) this.close(false);
     },
     getDisplayOption(opt) {
       const option = this.displayOptions.find(x => x.value === opt);
