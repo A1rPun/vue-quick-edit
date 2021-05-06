@@ -120,7 +120,7 @@ Maybe add specific overrides for bootstrap
 Use it like this
 
 ```html
-<quick-edit :classes="vueQuickEditClasses"><quick-edit>
+<quick-edit :classes="vueQuickEditClasses"></quick-edit>
 ```
 
 ### Thanks to

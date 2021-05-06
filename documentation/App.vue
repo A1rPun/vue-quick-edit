@@ -21,10 +21,11 @@
         :max="max"
         :maxlength="maxlength"
         :showButtons="showButtons"
-        @beforeinput="log"
-        @input="log"
-        @close="log"
-        @show="log"
+        @beforeinput="log('beforeinput', $event)"
+        @input="log('input', $event)"
+        @rawInput="log('rawInput', $event)"
+        @close="log('close', $event)"
+        @show="log('show', $event)"
       ></quick-edit>
       <hr>
       <h2>Custom slots</h2>
@@ -47,10 +48,11 @@
         :max="max"
         :maxlength="maxlength"
         :showButtons="showButtons"
-        @beforeinput="log"
-        @input="log"
-        @close="log"
-        @show="log"
+        @beforeinput="log('beforeinput', $event)"
+        @input="log('input', $event)"
+        @rawInput="log('rawInput', $event)"
+        @close="log('close', $event)"
+        @show="log('show', $event)"
       >
         <template v-slot:default="{ value, options, rawValue }">
           <span>The value is "{{ value }}" and the raw value is "{{ rawValue }}"</span>
