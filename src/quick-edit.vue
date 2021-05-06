@@ -9,8 +9,8 @@
         :tabindex="tabIndex"
         @focusin="handleFocus"
         @focusout="handleFocus"
-        @keypress.enter="ok"
-        @keypress.escape.exact="close"
+        @keypress.enter="ok(true)"
+        @keypress.escape.exact="close(true)"
       >
         <option v-show="$attrs.placeholder" :value="placeholderValue">{{ $attrs.placeholder }}</option>
         <option
@@ -28,8 +28,8 @@
         :tabindex="tabIndex"
         @focusin="handleFocus"
         @focusout="handleFocus"
-        @keypress.ctrl.enter="ok"
-        @keypress.escape.exact="close"
+        @keypress.ctrl.enter="ok(true)"
+        @keypress.escape.exact="close(true)"
       ></textarea>
       <template
         v-else-if="types.radio === type || types.checkbox === type"
@@ -43,8 +43,8 @@
             :disabled="option.disabled"
             v-model="inputValue"
             :tabindex="tabIndex"
-            @keypress.enter="ok"
-            @keypress.escape.exact="close"
+            @keypress.enter="ok(true)"
+            @keypress.escape.exact="close(true)"
           >
         </label>
       </template>
@@ -57,14 +57,14 @@
         :tabindex="tabIndex"
         @focusin="handleFocus"
         @focusout="handleFocus"
-        @keypress.enter="ok"
-        @keypress.escape.exact="close"
+        @keypress.enter="ok(true)"
+        @keypress.escape.exact="close(true)"
       >
       <div v-if="showButtons" :class="classNames.buttons">
         <button
           :class="classNames.buttonOk"
           :title="buttonOkText"
-          @click="ok"
+          @click="ok(true)"
           @focusin="handleFocus"
           @focusout="handleFocus"
         >
@@ -73,7 +73,7 @@
         <button
           :class="classNames.buttonCancel"
           :title="buttonCancelText"
-          @click="close"
+          @click="close(true)"
           @focusin="handleFocus"
           @focusout="handleFocus"
         >
