@@ -1,3 +1,4 @@
+/* global QUICKEDIT_DEFAULT_CLASSES */
 <template>
   <div ref="el" :class="classNames.wrapper">
     <template v-if="isEditing && isEnabled">
@@ -294,6 +295,12 @@ export default {
   },
   created() {
     this.setValue(this.value);
+  },
+  mounted() {
+    // Checks if the defaults need to be replaced by a custom definition in runtime.
+    if (typeof window.QUICKEDIT_DEFAULT_CLASSES !== 'undefined') {
+      this.defaultClasses = Object.assign({}, this.defaultClasses, window.QUICKEDIT_DEFAULT_CLASSES);
+    }
   },
 };
 </script>
